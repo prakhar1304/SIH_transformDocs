@@ -12,9 +12,8 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import DocumentScanner from 'react-native-document-scanner-plugin';
-import PDFLib from '@shogobg/react-native-pdf';
+import * as PDFLib from '@shogobg/react-native-pdf';
 import RNFS from 'react-native-fs';
-
 
 const ScanDoc: React.FC = () => {
   const [scannedImages, setScannedImages] = useState<string[]>([]);
@@ -23,24 +22,33 @@ const ScanDoc: React.FC = () => {
 
   const scanDocument = async () => {
     try {
+      console.log('Starting document scan...');
       const scanResult = await DocumentScanner.scanDocument({
         croppedImageQuality: 100,
       });
 
+      console.log('Scan result:', scanResult);
+
       if (scanResult.scannedImages && scanResult.scannedImages.length > 0) {
         const validImages = await Promise.all(
           scanResult.scannedImages.map(async (uri) => {
+            console.log('Checking URI:', uri);
             const filePath = Platform.OS === 'android' 
               ? uri.replace('content://', 'file:///') 
               : uri;
-            
+            console.log('Transformed file path:', filePath);
+
             const exists = await RNFS.exists(filePath);
+            console.log(`File exists (${filePath}):`, exists);
             return exists ? filePath : null;
           })
         );
 
         const filteredImages = validImages.filter((img): img is string => img !== null);
+        console.log('Filtered images:', filteredImages);
         setScannedImages(prev => [...prev, ...filteredImages]);
+      } else {
+        console.log('No images found in scan result.');
       }
     } catch (error) {
       console.error('Scan Error:', error);
@@ -55,6 +63,7 @@ const ScanDoc: React.FC = () => {
     }
 
     try {
+      console.log('Starting PDF creation...');
       const pdfDirectory = Platform.OS === 'android'
         ? RNFS.ExternalDirectoryPath
         : RNFS.DocumentDirectoryPath;
@@ -62,8 +71,15 @@ const ScanDoc: React.FC = () => {
       const pdfFilename = `ScannedDocument_${Date.now()}.pdf`;
       const pdfPath = `${pdfDirectory}/${pdfFilename}`;
 
-      const pages = scannedImages.map((imagePath) => {
-        return PDFLib.PDFPage
+      console.log('PDF path:', pdfPath);
+
+      // Create a new PDF document
+      const pdfDocument = await PDFLib.PDFDocument.create(pdfPath);
+
+      // Add pages to the PDF
+      for (const imagePath of scannedImages) {
+        console.log('Adding image to PDF:', imagePath);
+        const page = PDFLib.PDFPage
           .create()
           .setMediaBox(600, 800)
           .drawImage(imagePath, Platform.select({
@@ -76,12 +92,13 @@ const ScanDoc: React.FC = () => {
             width: 600,
             height: 800,
           });
-      });
+        
+        pdfDocument.addPages(page);
+      }
 
-      await PDFLib.PDFDocument
-        .create(pdfPath)
-        .addPages(...pages)
-        .write();
+      // Write the PDF
+      await pdfDocument.write();
+      console.log('PDF creation successful:', pdfPath);
 
       setPdfPath(pdfPath);
       Alert.alert('Success', `PDF created with ${scannedImages.length} pages`);
@@ -92,6 +109,7 @@ const ScanDoc: React.FC = () => {
   };
 
   const clearScans = () => {
+    console.log('Clearing scans...');
     setScannedImages([]);
     setPdfPath(null);
   };
@@ -116,18 +134,15 @@ const ScanDoc: React.FC = () => {
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.button} onPress={scanDocument}>
-          {/* <Icon name="camera-outline" size={24} color="white" /> */}
           <Text style={styles.buttonText}>Scan</Text>
         </TouchableOpacity>
 
         {scannedImages.length > 0 && (
           <>
             <TouchableOpacity style={styles.button} onPress={createPDF}>
-              {/* <Icon name="file-pdf-box" size={24} color="white" /> */}
               <Text style={styles.buttonText}>Create PDF ({scannedImages.length})</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.button, styles.clearButton]} onPress={clearScans}>
-              {/* <Icon name="delete-outline" size={24} color="white" /> */}
               <Text style={styles.buttonText}>Clear</Text>
             </TouchableOpacity>
           </>
@@ -136,7 +151,6 @@ const ScanDoc: React.FC = () => {
 
       {pdfPath && (
         <View style={styles.pdfInfo}>
-          {/* <Icon name="file-check-outline" size={24} color="#4CAF50" /> */}
           <Text style={styles.pdfText}>PDF Created Successfully</Text>
         </View>
       )}
@@ -212,4 +226,3 @@ const styles = StyleSheet.create({
 });
 
 export default ScanDoc;
-

@@ -11,9 +11,12 @@
   },
   "dependencies": {
     "@shogobg/react-native-pdf": "^1.1.5",
+    "axios": "^1.7.9",
+    "form-data": "^4.0.1",
     "react": "18.2.0",
     "react-native": "0.74.6",
     "react-native-document-scanner-plugin": "^1.0.1",
+    "react-native-dotenv": "^3.4.11",
     "react-native-fs": "^2.20.0"
   },
   "devDependencies": {
