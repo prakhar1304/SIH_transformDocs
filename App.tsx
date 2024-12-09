@@ -9,35 +9,30 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
+import {Colors} from 'react-native/Libraries/NewAppScreen';
 import ScanDoc from './src/ScanDoc';
-
-
-
-
-
+import UploadPDF from './src/pages/UploadDoc';
+import {AuthProvider} from './src/context/AuthContext';
+import AppNavigation from './src/navigation/AppNavigation';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { NavigationContainer } from '@react-navigation/native';
 
 function App(): React.JSX.Element {
-//   const isDarkMode = useColorScheme() === 'dark';
+  //   const isDarkMode = useColorScheme() === 'dark';
 
-//   const backgroundStyle = {
-//     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-//   };
-
+  //   const backgroundStyle = {
+  //     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  //   };
+  const Stack = createNativeStackNavigator();
   return (
-    <SafeAreaView style={{flex:1 , backgroundColor:"green"} }>
-      <StatusBar
-        barStyle={'light-content'}
-        backgroundColor={"white"}
-      />
-      <ScanDoc />
-
-    </SafeAreaView>
+    <AuthProvider>
+      <NavigationContainer>
+        <AppNavigation />
+      </NavigationContainer>
+    </AuthProvider>
   );
 }
 
-const styles = StyleSheet.create({
- 
-});
+const styles = StyleSheet.create({});
 
 export default App;
