@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   Alert,
   Image,
@@ -14,11 +14,14 @@ import {
 import DocumentScanner from 'react-native-document-scanner-plugin';
 import * as PDFLib from '@shogobg/react-native-pdf';
 import RNFS from 'react-native-fs';
+import storage from '@react-native-firebase/storage';
 
 const ScanDoc: React.FC = () => {
   const [scannedImages, setScannedImages] = useState<string[]>([]);
+  const [firebaseImageUrls, setFirebaseImageUrls] = useState<string[]>([]);
   const [pdfPath, setPdfPath] = useState<string | null>(null);
-  const { width } = useWindowDimensions();
+  const [uploading, setUploading] = useState<boolean>(false);
+  const {width} = useWindowDimensions();
 
   const scanDocument = async () => {
     try {
@@ -27,26 +30,25 @@ const ScanDoc: React.FC = () => {
         croppedImageQuality: 100,
       });
 
-      console.log('Scan result:', scanResult);
-
       if (scanResult.scannedImages && scanResult.scannedImages.length > 0) {
         const validImages = await Promise.all(
-          scanResult.scannedImages.map(async (uri) => {
-            console.log('Checking URI:', uri);
-            const filePath = Platform.OS === 'android' 
-              ? uri.replace('content://', 'file:///') 
-              : uri;
-            console.log('Transformed file path:', filePath);
+          scanResult.scannedImages.map(async uri => {
+            const filePath =
+              Platform.OS === 'android'
+                ? uri.replace('content://', 'file:///')
+                : uri;
 
             const exists = await RNFS.exists(filePath);
-            console.log(`File exists (${filePath}):`, exists);
             return exists ? filePath : null;
-          })
+          }),
         );
 
-        const filteredImages = validImages.filter((img): img is string => img !== null);
-        console.log('Filtered images:', filteredImages);
+        const filteredImages = validImages.filter(
+          (img): img is string => img !== null,
+        );
+
         setScannedImages(prev => [...prev, ...filteredImages]);
+        uploadImagesToFirebase(filteredImages);
       } else {
         console.log('No images found in scan result.');
       }
@@ -56,52 +58,114 @@ const ScanDoc: React.FC = () => {
     }
   };
 
-  const createPDF = async () => {
-    if (scannedImages.length === 0) {
+  const uploadImagesToFirebase = async (images: string[]) => {
+    setUploading(true);
+    try {
+      const uploadPromises = images.map(async (imagePath, index) => {
+        // Create a unique filename
+        const filename = `document_${Date.now()}_${index}.${
+          Platform.OS === 'android' ? 'png' : 'jpg'
+        }`;
+
+        // Reference to Firebase Storage
+        const reference = storage().ref(`scanned_documents/${filename}`);
+
+        // Upload file
+        await reference.putFile(imagePath);
+
+        // Get download URL
+        const downloadURL = await reference.getDownloadURL();
+        return downloadURL;
+      });
+
+      // Wait for all uploads to complete
+      const uploadedUrls = await Promise.all(uploadPromises);
+
+      // Update Firebase image URLs state
+      setFirebaseImageUrls(prev => [...prev, ...uploadedUrls]);
+
+      Alert.alert(
+        'Success',
+        `${uploadedUrls.length} images uploaded to Firebase`,
+      );
+    } catch (error) {
+      console.error('Firebase Upload Error:', error);
+      Alert.alert('Error', 'Failed to upload images to Firebase');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const createPDFFromFirebaseUrls = async () => {
+    if (firebaseImageUrls.length === 0) {
       Alert.alert('Error', 'No images to create PDF');
       return;
     }
 
     try {
-      console.log('Starting PDF creation...');
-      const pdfDirectory = Platform.OS === 'android'
-        ? RNFS.ExternalDirectoryPath
-        : RNFS.DocumentDirectoryPath;
+      // Download images from Firebase URLs
+      const downloadPromises = firebaseImageUrls.map(async url => {
+        const localPath = `${RNFS.DocumentDirectoryPath}/temp_${Date.now()}.${
+          Platform.OS === 'android' ? 'png' : 'jpg'
+        }`;
+
+        // Download the file
+        await RNFS.downloadFile({
+          fromUrl: url,
+          toFile: localPath,
+        }).promise;
+
+        return localPath;
+      });
+
+      const localImagePaths = await Promise.all(downloadPromises);
+
+      // PDF creation logic remains similar to previous implementation
+      const pdfDirectory =
+        Platform.OS === 'android'
+          ? RNFS.ExternalDirectoryPath
+          : RNFS.DocumentDirectoryPath;
 
       const pdfFilename = `ScannedDocument_${Date.now()}.pdf`;
       const pdfPath = `${pdfDirectory}/${pdfFilename}`;
-
-      console.log('PDF path:', pdfPath);
 
       // Create a new PDF document
       const pdfDocument = await PDFLib.PDFDocument.create(pdfPath);
 
       // Add pages to the PDF
-      for (const imagePath of scannedImages) {
-        console.log('Adding image to PDF:', imagePath);
-        const page = PDFLib.PDFPage
-          .create()
+      for (const imagePath of localImagePaths) {
+        const page = PDFLib.PDFPage.create()
           .setMediaBox(600, 800)
-          .drawImage(imagePath, Platform.select({
-            ios: 'jpg',
-            android: 'png',
-            default: 'jpg'
-          }), {
-            x: 0,
-            y: 0,
-            width: 600,
-            height: 800,
-          });
-        
+          .drawImage(
+            imagePath,
+            Platform.select({
+              ios: 'jpg',
+              android: 'png',
+              default: 'jpg',
+            }),
+            {
+              x: 0,
+              y: 0,
+              width: 600,
+              height: 800,
+            },
+          );
+
         pdfDocument.addPages(page);
       }
 
       // Write the PDF
       await pdfDocument.write();
-      console.log('PDF creation successful:', pdfPath);
 
       setPdfPath(pdfPath);
-      Alert.alert('Success', `PDF created with ${scannedImages.length} pages`);
+      Alert.alert(
+        'Success',
+        `PDF created with ${localImagePaths.length} pages`,
+      );
+      console.log('PDF saved at:', pdfPath);
+
+      // Optional: Clean up temporary downloaded files
+      await Promise.all(localImagePaths.map(path => RNFS.unlink(path)));
     } catch (error) {
       console.error('PDF Creation Error:', error);
       Alert.alert('Error', `Failed to create PDF: ${JSON.stringify(error)}`);
@@ -109,40 +173,50 @@ const ScanDoc: React.FC = () => {
   };
 
   const clearScans = () => {
-    console.log('Clearing scans...');
     setScannedImages([]);
+    setFirebaseImageUrls([]);
     setPdfPath(null);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Document Scanner</Text>
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.imageScrollView}
-        contentContainerStyle={styles.imageContainer}
-      >
+        contentContainerStyle={styles.imageContainer}>
         {scannedImages.map((uri, index) => (
           <Image
             key={index}
             source={{uri}}
             resizeMode="cover"
-            style={[styles.image, { width: width * 0.45 }]}
+            style={[styles.image, {width: width * 0.45}]}
           />
         ))}
       </ScrollView>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={scanDocument}>
-          <Text style={styles.buttonText}>Scan</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={scanDocument}
+          disabled={uploading}>
+          <Text style={styles.buttonText}>
+            {uploading ? 'Uploading...' : 'Scan'}
+          </Text>
         </TouchableOpacity>
 
-        {scannedImages.length > 0 && (
+        {firebaseImageUrls.length > 0 && (
           <>
-            <TouchableOpacity style={styles.button} onPress={createPDF}>
-              <Text style={styles.buttonText}>Create PDF ({scannedImages.length})</Text>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={createPDFFromFirebaseUrls}>
+              <Text style={styles.buttonText}>
+                Create PDF ({firebaseImageUrls.length})
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, styles.clearButton]} onPress={clearScans}>
+            <TouchableOpacity
+              style={[styles.button, styles.clearButton]}
+              onPress={clearScans}>
               <Text style={styles.buttonText}>Clear</Text>
             </TouchableOpacity>
           </>

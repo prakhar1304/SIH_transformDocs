@@ -9,8 +9,10 @@ import {
 } from 'react-native';
 import DocumentPicker, {types} from 'react-native-document-picker';
 import {AuthContext} from '../context/AuthContext';
+import {useNavigation} from '@react-navigation/native';
 
 const UploadPDF: React.FC = () => {
+  const navigation = useNavigation();
   const [hasPermission, setHasPermission] = useState(true);
 
   // Request permission on Android
@@ -76,6 +78,13 @@ const UploadPDF: React.FC = () => {
       <Text style={{color: 'white'}}>bhv</Text>
       <Button title="Select PDF" onPress={handleSelectPDF} />
       {usertoken !== null ? <Text>working</Text> : <Text>not working</Text>}
+
+      <Button title="naviagte" onPress={() => navigation.navigate('ScanDoc')} />
+
+      <Button
+        title="to pdf"
+        onPress={() => navigation.navigate('ImageToPDf')}
+      />
     </View>
   );
 };

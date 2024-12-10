@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "958367406575",
+    "firebase_url": "https://thodibaat-4afdc-default-rtdb.firebaseio.com",
+    "project_id": "thodibaat-4afdc",
+    "storage_bucket": "thodibaat-4afdc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:958367406575:android:4c4a8b04b7816b6a76fe1a",
+        "android_client_info": {
+          "package_name": "com.chatapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABeIQrEmAcoFC230suLZSnkRdzkWqXwYA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:958367406575:android:52cc3d7bc62c52ca76fe1a",
+        "android_client_info": {
+          "package_name": "com.thodibaat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABeIQrEmAcoFC230suLZSnkRdzkWqXwYA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:958367406575:android:0edaf77fd349df5d76fe1a",
+        "android_client_info": {
+          "package_name": "com.transformodocs"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABeIQrEmAcoFC230suLZSnkRdzkWqXwYA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
