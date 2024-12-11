@@ -2,15 +2,24 @@ import * as React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import BottomNavigator from './BottomNavigator';
-import ScanDoc from '../ScanDoc';
+import ScanDoc from '../pages/ScanDoc';
 import ImageToPDFConverter from '../pages/ImageToPDFConverter';
 import UploadPDF from '../pages/UploadDoc';
+import ChatBot from '../pages/chatbot/ChatBot';
+import SplashScreen from '../pages/SplashScreen';
 
 const Stack = createNativeStackNavigator();
 
 function AppNavigation() {
   return (
-    <Stack.Navigator screenOptions={{headerShown: false}}>
+    <Stack.Navigator
+      initialRouteName={'SplashScreen'}
+      screenOptions={{headerShown: false}}>
+      <Stack.Screen
+        name="SplashScreen"
+        component={SplashScreen}
+        options={{animation: 'slide_from_bottom'}}
+      />
       <Stack.Screen
         name="BottomNavigator"
         component={BottomNavigator}
@@ -29,6 +38,11 @@ function AppNavigation() {
       <Stack.Screen
         name="UploadPdf"
         component={UploadPDF}
+        options={{animation: 'slide_from_bottom'}}
+      />
+      <Stack.Screen
+        name="ChatBot"
+        component={ChatBot}
         options={{animation: 'slide_from_bottom'}}
       />
     </Stack.Navigator>
