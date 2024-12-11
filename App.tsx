@@ -10,12 +10,12 @@ import {
   View,
 } from 'react-native';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import ScanDoc from './src/ScanDoc';
+import ScanDoc from './src/pages/ScanDoc';
 import UploadPDF from './src/pages/UploadDoc';
 import {AuthProvider} from './src/context/AuthContext';
 import AppNavigation from './src/navigation/AppNavigation';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { NavigationContainer } from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {NavigationContainer} from '@react-navigation/native';
 
 function App(): React.JSX.Element {
   //   const isDarkMode = useColorScheme() === 'dark';
