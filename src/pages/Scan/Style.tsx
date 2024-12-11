@@ -4,7 +4,7 @@ import CommonColors from '../../common/CommonColors';
 
 const {width, height} = Dimensions.get('window');
 
-const styles = StyleSheet.create({
+const style = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: CommonColors.BACKGROUND_COLOR,
@@ -183,4 +183,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default styles;
+export default style;
