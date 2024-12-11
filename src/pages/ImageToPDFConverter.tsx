@@ -14,11 +14,13 @@ import {
 import * as ImagePicker from 'react-native-image-picker';
 import * as PDFLib from '@shogobg/react-native-pdf';
 import RNFS from 'react-native-fs';
+import CommonStyles from '../common/CommonStyles';
 
 const ImageToPDFConverter: React.FC = () => {
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [pdfPath, setPdfPath] = useState<string | null>(null);
   const {width} = useWindowDimensions();
+  const commonStyles = CommonStyles('white');
 
   const pickImages = () => {
     const options: ImagePicker.ImageLibraryOptions = {

@@ -27,6 +27,7 @@ export default {
   BUBBLE_SENDER: '#fffbd1',
   DARK_BLUE: '#203769',
   WARNNING: '#f5efcb',
+
   THEME: '#002DE3',
   FONT_COLOUR: '#0F1828',
   BG_LIGHT_GRAY: '#F7F7FC',

@@ -36,8 +36,7 @@ interface UploadResponse {
   };
 }
 
-const API_URL =
-  'https://4865-2409-40f2-3014-540b-8c34-d0b0-8778-7fbc.ngrok-free.app/api/upload';
+const API_URL = 'https://d642-125-18-25-132.ngrok-free.app/api/upload';
 
 const UploadScreen: React.FC = () => {
   const [hasPermission, setHasPermission] = useState(true);
@@ -93,18 +92,17 @@ const UploadScreen: React.FC = () => {
 
       console.log('Uploading to:', API_URL);
       console.log('File size:', fileContent.length);
+      console.log('File Name:', file.name);
+      // console.log('File Name:', fileContent);
 
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add if needed
-          Accept: 'application/json',
-          'Access-Control-Allow-Origin': '*',
         },
         body: JSON.stringify({
           fileName: file.name,
-          fileType: 'application/pdf', // Hardcoded as PDF
+          fileType: 'application/pdf',
           fileContent,
         }),
       });
@@ -228,7 +226,7 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderRadius: 12,
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: CommonColors.WHITE,
   },
   uploadText: {
     fontSize: 18,

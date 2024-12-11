@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     borderTopColor: 'transparent',
   },
   addButton: {
-    backgroundColor: '#FF4141',
+    backgroundColor: CommonColors.BLACK,
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   option: {
-    backgroundColor: '#FF4141',
+    backgroundColor: CommonColors.BLACK,
     width: 45,
     height: 45,
     borderRadius: 22.5,

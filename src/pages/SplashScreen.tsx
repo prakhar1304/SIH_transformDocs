@@ -31,7 +31,7 @@ const SplashScreen: React.FC = ({navigation}: any) => {
 
         // Delay to show splash screen
         setTimeout(() => {
-          navigation.navigate('BottomNavigator');
+          navigation.navigate('Login');
 
           // navigation.navigate('WelcomeScreen');
         }, 2000); // 2 second delay
