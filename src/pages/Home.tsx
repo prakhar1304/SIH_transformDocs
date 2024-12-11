@@ -13,6 +13,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import MainHeader from '../component/MainHeader';
 import CommonColors from '../common/CommonColors';
 import {useNavigation} from '@react-navigation/native';
+import OrganizationCard from '../component/OrganizationCard';
 
 const {width, height} = Dimensions.get('window');
 
@@ -27,66 +28,19 @@ const Home = () => {
       logoUrl:
         'https://media.9curry.com/uploads/organization/image/462/mhrd.png',
     },
-    {
-      name: 'TechCo Innovations',
-      department: 'Research & Development',
-      adminName: 'Jane Smith',
-      documentCount: 78,
-      logoUrl:
-        'https://media.9curry.com/uploads/organization/image/462/mhrd.png',
-    },
-    {
-      name: 'Global Enterprises',
-      department: 'Marketing',
-      adminName: 'Mike Johnson',
-      documentCount: 56,
-      logoUrl:
-        'https://media.9curry.com/uploads/organization/image/462/mhrd.png',
-    },
-    {
-      name: 'Global Enterprises',
-      department: 'Marketing',
-      adminName: 'Mike Johnson',
-      documentCount: 56,
-      logoUrl:
-        'https://media.9curry.com/uploads/organization/image/462/mhrd.png',
-    },
-    {
-      name: 'Global Enterprises',
-      department: 'Marketing',
-      adminName: 'Mike Johnson',
-      documentCount: 56,
-      logoUrl:
-        'https://media.9curry.com/uploads/organization/image/462/mhrd.png',
-    },
   ];
 
   const navigation = useNavigation();
-
-  const renderOrgCard = (org, index) => (
-    <View key={index} style={styles.card}>
-      <Image source={{uri: org.logoUrl}} style={styles.logo} />
-      <View style={styles.cardContent}>
-        <Text style={styles.orgName}>{org.name}</Text>
-        <Text style={styles.department}>{org.department}</Text>
-        <Text style={styles.adminName}>Admin: {org.adminName}</Text>
-        <Text style={styles.documentCount}>
-          Documents Uploaded: {org.documentCount}
-        </Text>
-        <TouchableOpacity style={styles.viewButton}>
-          <Text style={styles.viewButtonText}>View Details</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={CommonColors.GRADIENT_ONE} />
       <MainHeader title={'TransformoDocs'} />
       <ScrollView style={styles.content}>
-        <Text style={styles.heading}>Organizations</Text>
-        {orgsData.map(renderOrgCard)}
+        <Text style={styles.heading}>Your Organizations</Text>
+        {orgsData.map((org, index) => (
+          <OrganizationCard key={index} org={org} onPress={() => {}} />
+        ))}
       </ScrollView>
       <TouchableOpacity
         style={styles.aiButton}
@@ -112,10 +66,11 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   heading: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 25,
     marginBottom: 20,
-    color: '#333',
+    color: CommonColors.FONT_COLOUR,
+    fontFamily: 'Mulish-Black',
+    alignSelf: 'center',
   },
   card: {
     backgroundColor: '#ffffff',

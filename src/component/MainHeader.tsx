@@ -5,6 +5,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import {moderateScale, scale, verticalScale} from 'react-native-size-matters';
 import CommonColors from '../common/CommonColors';
 import Icon, {Icons} from '../common/Icons';
+import CommonStyles from '../common/CommonStyles';
 
 const MainHeader = (props: any) => {
   const {title} = props;
@@ -18,7 +19,7 @@ const MainHeader = (props: any) => {
       <TouchableOpacity onPress={() => {}}>
         <Image
           source={{
-            uri: 'https://cdn-icons-png.flaticon.com/512/6109/6109270.png',
+            uri: 'https://www.kindpng.com/picc/m/24-248253_user-profile-default-image-png-clipart-png-download.png',
           }}
           style={Style.profileImage}
         />
@@ -47,12 +48,14 @@ const Style = StyleSheet.create({
   },
 
   profileImage: {
-    height: moderateScale(40),
-    width: moderateScale(40),
+    height: moderateScale(30),
+    width: moderateScale(30),
+    borderRadius: 50,
   },
   Title: {
     color: CommonColors.WHITE,
     fontSize: 20,
+    fontFamily: 'Mulish-Black',
   },
 });
 

@@ -10,11 +10,48 @@ import {
   View,
   Platform,
   useWindowDimensions,
+  TextInput,
+  StatusBar,
 } from 'react-native';
 import DocumentScanner from 'react-native-document-scanner-plugin';
 import * as PDFLib from '@shogobg/react-native-pdf';
 import RNFS from 'react-native-fs';
 import storage from '@react-native-firebase/storage';
+import CommonColors from '../common/CommonColors';
+import Header from '../component/header/Index';
+import LinearGradient from 'react-native-linear-gradient';
+import Icon, {Icons} from '../common/Icons';
+import {verticalScale} from 'react-native-size-matters';
+import style from './Scan/Style';
+
+const API_URL: string = 'https://d642-125-18-25-132.ngrok-free.app/api/upload';
+
+interface ScanDocumentResult {
+  scannedImages: string[];
+}
+
+interface PDFFile {
+  name: string;
+  uri: string;
+  type: string;
+}
+
+interface UploadResponse {
+  data: {
+    url: string;
+    key: string;
+    fileName: string;
+    fileType: string;
+    isMachineReadable: boolean;
+    needsConversion: boolean;
+  };
+}
+
+interface UploadRequestBody {
+  fileName: string;
+  fileType: string;
+  fileContent: string;
+}
 
 const ScanDoc: React.FC = () => {
   const [scannedImages, setScannedImages] = useState<string[]>([]);
@@ -22,29 +59,43 @@ const ScanDoc: React.FC = () => {
   const [pdfPath, setPdfPath] = useState<string | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
   const {width} = useWindowDimensions();
-  const [pdfBase64, setPdfBase64] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string>('');
+  const [pdfBase64, setPdfBase64] = useState<string>('');
+  const [fileNameInputMode, setFileNameInputMode] = useState<boolean>(false);
 
-  const scanDocument = async () => {
+  const styles = style;
+
+  const convertToBase64 = async (pdfPath: string): Promise<string> => {
     try {
-      console.log('Starting document scan...');
+      // Read the file content
+      const fileContent: string = await RNFS.readFile(pdfPath, 'base64');
+      return `data:application/pdf;base64,${fileContent}`;
+    } catch (error) {
+      console.error('Error converting file to base64:', error);
+      throw error;
+    }
+  };
+
+  const scanDocument = async (): Promise<void> => {
+    try {
       const scanResult = await DocumentScanner.scanDocument({
-        croppedImageQuality: 100,
+        croppedImageQuality: 50,
       });
 
       if (scanResult.scannedImages && scanResult.scannedImages.length > 0) {
-        const validImages = await Promise.all(
-          scanResult.scannedImages.map(async uri => {
-            const filePath =
+        const validImages: (string | null)[] = await Promise.all(
+          scanResult.scannedImages.map(async (uri: string) => {
+            const filePath: string =
               Platform.OS === 'android'
                 ? uri.replace('content://', 'file:///')
                 : uri;
 
-            const exists = await RNFS.exists(filePath);
+            const exists: boolean = await RNFS.exists(filePath);
             return exists ? filePath : null;
           }),
         );
 
-        const filteredImages = validImages.filter(
+        const filteredImages: string[] = validImages.filter(
           (img): img is string => img !== null,
         );
 
@@ -59,30 +110,23 @@ const ScanDoc: React.FC = () => {
     }
   };
 
-  const uploadImagesToFirebase = async (images: string[]) => {
+  const uploadImagesToFirebase = async (images: string[]): Promise<void> => {
     setUploading(true);
     try {
-      const uploadPromises = images.map(async (imagePath, index) => {
-        // Create a unique filename
-        const filename = `document_${Date.now()}_${index}.${
-          Platform.OS === 'android' ? 'png' : 'jpg'
-        }`;
+      const uploadPromises: Promise<string>[] = images.map(
+        async (imagePath, index) => {
+          const filename: string = `document_${Date.now()}_${index}.${
+            Platform.OS === 'android' ? 'png' : 'jpg'
+          }`;
 
-        // Reference to Firebase Storage
-        const reference = storage().ref(`scanned_documents/${filename}`);
+          const reference = storage().ref(`scanned_documents/${filename}`);
+          await reference.putFile(imagePath);
+          const downloadURL: string = await reference.getDownloadURL();
+          return downloadURL;
+        },
+      );
 
-        // Upload file
-        await reference.putFile(imagePath);
-
-        // Get download URL
-        const downloadURL = await reference.getDownloadURL();
-        return downloadURL;
-      });
-
-      // Wait for all uploads to complete
-      const uploadedUrls = await Promise.all(uploadPromises);
-
-      // Update Firebase image URLs state
+      const uploadedUrls: string[] = await Promise.all(uploadPromises);
       setFirebaseImageUrls(prev => [...prev, ...uploadedUrls]);
 
       Alert.alert(
@@ -97,44 +141,52 @@ const ScanDoc: React.FC = () => {
     }
   };
 
-  const createPDFFromFirebaseUrls = async () => {
+  const createPDF = async (): Promise<void> => {
     if (firebaseImageUrls.length === 0) {
       Alert.alert('Error', 'No images to create PDF');
       return;
     }
 
+    if (!fileName.trim()) {
+      Alert.alert('Error', 'Please enter a file name');
+      return;
+    }
+
     try {
       // Download images from Firebase URLs
-      const downloadPromises = firebaseImageUrls.map(async url => {
-        const localPath = `${RNFS.DocumentDirectoryPath}/temp_${Date.now()}.${
-          Platform.OS === 'android' ? 'png' : 'jpg'
-        }`;
+      const downloadPromises: Promise<string>[] = firebaseImageUrls.map(
+        async (url, index) => {
+          const localPath: string = `${
+            RNFS.DocumentDirectoryPath
+          }/temp_${Date.now()}_${index}.${
+            Platform.OS === 'android' ? 'png' : 'jpg'
+          }`;
 
-        // Download the file
-        await RNFS.downloadFile({
-          fromUrl: url,
-          toFile: localPath,
-        }).promise;
+          await RNFS.downloadFile({
+            fromUrl: url,
+            toFile: localPath,
+          }).promise;
 
-        return localPath;
-      });
+          return localPath;
+        },
+      );
 
-      const localImagePaths = await Promise.all(downloadPromises);
+      const localImagePaths: string[] = await Promise.all(downloadPromises);
 
-      // PDF creation logic remains similar to previous implementation
-      const pdfDirectory =
+      // Determine PDF storage path
+      const pdfDirectory: string =
         Platform.OS === 'android'
           ? RNFS.ExternalDirectoryPath
           : RNFS.DocumentDirectoryPath;
 
-      const pdfFilename = `ScannedDocument_${Date.now()}.pdf`;
-      const pdfPath = `${pdfDirectory}/${pdfFilename}`;
+      const pdfFilename: string = `${fileName.trim()}_${Date.now()}.pdf`;
+      const pdfPath: string = `${pdfDirectory}/${pdfFilename}`;
 
       // Create a new PDF document
       const pdfDocument = await PDFLib.PDFDocument.create(pdfPath);
 
       // Add pages to the PDF
-      for (const imagePath of localImagePaths) {
+      for (const [index, imagePath] of localImagePaths.entries()) {
         const page = PDFLib.PDFPage.create()
           .setMediaBox(600, 800)
           .drawImage(
@@ -149,6 +201,7 @@ const ScanDoc: React.FC = () => {
               y: 0,
               width: 600,
               height: 800,
+              compressionQuality: 0.5,
             },
           );
 
@@ -158,158 +211,194 @@ const ScanDoc: React.FC = () => {
       // Write the PDF
       await pdfDocument.write();
 
-      // Convert PDF to base64
-      const base64Data = await RNFS.readFile(pdfPath, 'base64');
-      setPdfBase64(base64Data);
+      const fileContent: string = await convertToBase64(pdfPath);
+      setPdfBase64(fileContent);
       setPdfPath(pdfPath);
+      console.log('File converted to base64, size:', fileContent.length);
 
-      Alert.alert(
-        'Success',
-        `PDF created with ${localImagePaths.length} pages`,
-      );
-      console.log('PDF saved at:', pdfPath);
-      console.log('Base64 PDF length:', base64Data.length);
-
-      setPdfPath(pdfPath);
-      Alert.alert(
-        'Success',
-        `PDF created with ${localImagePaths.length} pages`,
-      );
-      console.log('PDF saved at:', pdfPath);
-
-      // Optional: Clean up temporary downloaded files
+      // Clean up temporary downloaded files
       await Promise.all(localImagePaths.map(path => RNFS.unlink(path)));
+
+      Alert.alert('Success', 'PDF created successfully');
     } catch (error) {
       console.error('PDF Creation Error:', error);
       Alert.alert('Error', `Failed to create PDF: ${JSON.stringify(error)}`);
     }
   };
 
-  const clearScans = () => {
+  const uploadPDF = async (): Promise<void> => {
+    if (!pdfBase64) {
+      Alert.alert('Error', 'No PDF to upload');
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      const requestBody: UploadRequestBody = {
+        fileName: `${fileName.trim()}.pdf`,
+        fileType: 'application/pdf',
+        fileContent: pdfBase64,
+      };
+
+      const response: Response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText: string = await response.text();
+        throw new Error(`Upload failed: ${response.status} ${errorText}`);
+      }
+
+      const result: UploadResponse = await response.json();
+      Alert.alert('Success', 'PDF uploaded to AI service successfully');
+      console.log('AI Upload Response:', result);
+    } catch (error) {
+      console.error('AI Upload Error:', error);
+      Alert.alert('Error', 'Failed to upload PDF to AI service');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const clearScans = (): void => {
     setScannedImages([]);
     setFirebaseImageUrls([]);
     setPdfPath(null);
+    setPdfBase64('');
+    setFileName('');
+  };
+
+  const toggleFileNameInput = (): void => {
+    setFileNameInputMode(!fileNameInputMode);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Document Scanner</Text>
+      <StatusBar
+        backgroundColor={CommonColors.GRADIENT_ONE}
+        barStyle="light-content"
+      />
+      <Header title={'Document Scanner'} />
 
-      <ScrollView
-        style={styles.imageScrollView}
-        contentContainerStyle={styles.imageContainer}>
-        {scannedImages.map((uri, index) => (
-          <Image
-            key={index}
-            source={{uri}}
-            resizeMode="cover"
-            style={[styles.image, {width: width * 0.45}]}
-          />
-        ))}
-      </ScrollView>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={scanDocument}
-          disabled={uploading}>
-          <Text style={styles.buttonText}>
-            {uploading ? 'Uploading...' : 'Scan'}
-          </Text>
-        </TouchableOpacity>
-
-        {firebaseImageUrls.length > 0 && (
-          <>
+      <View style={styles.contentContainer}>
+        {fileNameInputMode ? (
+          <View style={styles.fileNameInputContainer}>
+            <TextInput
+              style={styles.fileNameInput}
+              placeholder="Enter file name"
+              value={fileName}
+              onChangeText={setFileName}
+              placeholderTextColor={CommonColors.BG_LIGHT_GRAY}
+            />
             <TouchableOpacity
-              style={styles.button}
-              onPress={createPDFFromFirebaseUrls}>
-              <Text style={styles.buttonText}>
-                Create PDF ({firebaseImageUrls.length})
-              </Text>
+              style={styles.doneButton}
+              onPress={toggleFileNameInput}
+              disabled={!fileName.trim()}>
+              <Text style={styles.doneButtonText}>Done</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.clearButton]}
-              onPress={clearScans}>
-              <Text style={styles.buttonText}>Clear</Text>
-            </TouchableOpacity>
-          </>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.fileNameDisplay}
+            onPress={toggleFileNameInput}>
+            <Icon
+              type={Icons.Feather}
+              name={'edit-2'}
+              size={18}
+              color={CommonColors.THEME}
+            />
+            <Text style={styles.fileNameText}>
+              {fileName || 'Tap to set file name'}
+            </Text>
+          </TouchableOpacity>
         )}
-      </View>
 
-      {pdfPath && (
-        <View style={styles.pdfInfo}>
-          <Text style={styles.pdfText}>PDF Created Successfully</Text>
+        <ScrollView
+          style={styles.imageScrollView}
+          contentContainerStyle={styles.imageContainer}>
+          {scannedImages.map((uri, index) => (
+            <View key={index} style={styles.imageWrapper}>
+              <Image
+                source={{uri}}
+                resizeMode="cover"
+                style={[styles.image, {width: width * 0.45}]}
+              />
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.7)']}
+                style={styles.imageOverlay}>
+                <Text style={styles.imageNumber}>Page {index + 1}</Text>
+              </LinearGradient>
+            </View>
+          ))}
+        </ScrollView>
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.uploadArea, uploading && styles.disabledButton]}
+            onPress={scanDocument}
+            disabled={uploading}>
+            <Icon
+              type={Icons.AntDesign}
+              name={'scan1'}
+              size={20}
+              color={'#2196F3'}
+            />
+            <Text style={styles.uploadText}>
+              {uploading ? 'Scanning...' : 'Scan Document'}
+            </Text>
+            <Text style={styles.uploadSubText}>
+              Capture pages for your document
+            </Text>
+          </TouchableOpacity>
+
+          {firebaseImageUrls.length > 0 && (
+            <View style={styles.actionButtonContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  uploading && styles.disabledButton,
+                ]}
+                onPress={createPDF}
+                disabled={uploading || !fileName.trim()}>
+                <Text style={styles.actionButtonText}>
+                  {uploading ? 'Processing...' : 'Create PDF'}
+                </Text>
+              </TouchableOpacity>
+
+              {pdfBase64 && (
+                <TouchableOpacity
+                  style={[
+                    styles.actionButton,
+                    uploading && styles.disabledButton,
+                  ]}
+                  onPress={uploadPDF}
+                  disabled={uploading}>
+                  <Text style={styles.actionButtonText}>
+                    {uploading ? 'Uploading...' : 'Upload PDF'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={[
+                  styles.actionButton,
+                  uploading && styles.disabledButton,
+                ]}
+                onPress={clearScans}
+                disabled={uploading}>
+                <Text style={styles.actionButtonText}>Clear All</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
-      )}
+      </View>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  imageScrollView: {
-    flex: 1,
-  },
-  imageContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  image: {
-    height: 200,
-    marginBottom: 10,
-    borderRadius: 8,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    marginTop: 20,
-    flexWrap: 'wrap',
-  },
-  button: {
-    backgroundColor: '#2196F3',
-    padding: 12,
-    borderRadius: 25,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 8,
-    minWidth: 120,
-  },
-  clearButton: {
-    backgroundColor: '#F44336',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    marginLeft: 8,
-  },
-  pdfInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#E8F5E9',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 16,
-  },
-  pdfText: {
-    marginLeft: 8,
-    fontSize: 16,
-    color: '#4CAF50',
-  },
-});
 
 export default ScanDoc;

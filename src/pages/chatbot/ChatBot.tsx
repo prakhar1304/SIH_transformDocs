@@ -15,6 +15,7 @@ import CommonColors from '../../common/CommonColors';
 import CommonStyles from '../../common/CommonStyles';
 import Styles from './Styles';
 import ReactMarkdown from 'react-native-markdown-display';
+import MainHeader from '../../component/MainHeader';
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI('AIzaSyDKvJBGxmhAYjC7O5stDTBHeexdLT6VlMo');
@@ -57,7 +58,7 @@ const ChatBot: React.FC = () => {
   useEffect(() => {
     const welcomeMessage: IMessage = {
       _id: 1,
-      text: "**Welcome!** \n\nI'm your AI assistant. How can I help you with file conversions and data processing today?",
+      text: "**Welcome!** \n\nI'm your AI assistant. How can I help you with problem  faced in  using thi app?",
       createdAt: new Date(),
       user: BOT_USER,
     };
@@ -172,6 +173,7 @@ const ChatBot: React.FC = () => {
         backgroundColor={CommonColors.STATUSBAR}
         barStyle="light-content"
       />
+      <MainHeader title="Chat  Bot" />
       <View style={commonStyles.container}>
         <View
           style={{

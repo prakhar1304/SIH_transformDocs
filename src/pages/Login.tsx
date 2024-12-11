@@ -11,10 +11,12 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import {moderateScale, scale, verticalScale} from 'react-native-size-matters';
+import {useNavigation} from '@react-navigation/native';
 
 const {width, height} = Dimensions.get('window');
 
 const Login = () => {
+  const navigation = useNavigation();
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#4A7AFF" barStyle="light-content" />
@@ -56,7 +58,9 @@ const Login = () => {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.btn}>
+          <TouchableOpacity
+            style={styles.btn}
+            onPress={() => navigation.navigate('BottomNavigator')}>
             <Text style={styles.btnText}>Login Now</Text>
           </TouchableOpacity>
 

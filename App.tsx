@@ -16,6 +16,13 @@ import {AuthProvider} from './src/context/AuthContext';
 import AppNavigation from './src/navigation/AppNavigation';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {NavigationContainer} from '@react-navigation/native';
+import {LogBox} from 'react-native';
+
+LogBox.ignoreLogs([
+  'Warning: Cannot record touch end without a touch start.', // Add the warning message here
+]);
+
+LogBox.ignoreAllLogs(true);
 
 function App(): React.JSX.Element {
   //   const isDarkMode = useColorScheme() === 'dark';
