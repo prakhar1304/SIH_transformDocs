@@ -1,19 +1,48 @@
 import React, {useContext, useState} from 'react';
 import {
   View,
-  Button,
+  Text,
+  TouchableOpacity,
   Alert,
   Platform,
   PermissionsAndroid,
-  Text,
+  ScrollView,
+  StyleSheet,
+  StatusBar,
 } from 'react-native';
 import DocumentPicker, {types} from 'react-native-document-picker';
 import {AuthContext} from '../context/AuthContext';
-import {useNavigation} from '@react-navigation/native';
+import Icon, {Icons} from '../common/Icons';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import Header from '../component/header/Index';
+import CommonColors from '../common/CommonColors';
+import {verticalScale} from 'react-native-size-matters';
+import RNFS from 'react-native-fs';
 
-const UploadPDF: React.FC = () => {
-  const navigation = useNavigation();
+interface PDFFile {
+  name: string;
+  uri: string;
+  type: string;
+}
+
+interface UploadResponse {
+  data: {
+    url: string;
+    key: string;
+    fileName: string;
+    fileType: string;
+    isMachineReadable: boolean;
+    needsConversion: boolean;
+  };
+}
+
+const API_URL =
+  'https://4865-2409-40f2-3014-540b-8c34-d0b0-8778-7fbc.ngrok-free.app/api/upload';
+
+const UploadScreen: React.FC = () => {
   const [hasPermission, setHasPermission] = useState(true);
+  const [pdfFiles, setPdfFiles] = useState<PDFFile[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Request permission on Android
   const requestPermission = async () => {
@@ -41,8 +70,61 @@ const UploadPDF: React.FC = () => {
       } catch (err) {
         console.warn(err);
       }
-    } else {
-      setHasPermission(true); // iOS doesn't need runtime permissions
+    }
+  };
+
+  const convertToBase64 = async (uri: string): Promise<string> => {
+    try {
+      // Read the file content
+      const fileContent = await RNFS.readFile(uri, 'base64');
+      return `data:application/pdf;base64,${fileContent}`;
+    } catch (error) {
+      console.error('Error converting file to base64:', error);
+      throw error;
+    }
+  };
+
+  const uploadFile = async (file: PDFFile) => {
+    try {
+      setIsUploading(true);
+      console.log('Starting file upload to:', API_URL);
+      const fileContent = await convertToBase64(file.uri);
+      console.log('File converted to base64, size:', fileContent.length);
+
+      console.log('Uploading to:', API_URL);
+      console.log('File size:', fileContent.length);
+
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add if needed
+          Accept: 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: 'application/pdf', // Hardcoded as PDF
+          fileContent,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server response:', response.status, errorText);
+        throw new Error(`Upload failed: ${response.status} ${errorText}`);
+      }
+
+      const result: UploadResponse = await response.json();
+      console.log('Upload success:', result.data);
+      Alert.alert('Success', 'File uploaded successfully');
+      return result.data;
+    } catch (error) {
+      console.error('Upload error:', error);
+      Alert.alert('Error', 'Failed to upload file');
+      throw error;
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -53,14 +135,17 @@ const UploadPDF: React.FC = () => {
 
     if (hasPermission) {
       try {
-        // Open the document picker
         const result = await DocumentPicker.pick({
-          type: [types.pdf], // Allow only PDF files
+          type: [types.pdf],
         });
 
-        // Log the file details
-        console.log('Selected File:', result[0]);
-        Alert.alert('File Selected', `Name: ${result[0].name}`);
+        const newFile = {
+          name: result[0].name,
+          uri: result[0].uri,
+          type: result[0].type || 'application/pdf',
+        };
+
+        setPdfFiles(prevFiles => [...prevFiles, newFile]);
       } catch (err: any) {
         if (DocumentPicker.isCancel(err)) {
           console.log('User canceled the picker');
@@ -71,22 +156,136 @@ const UploadPDF: React.FC = () => {
     }
   };
 
-  const {usertoken} = useContext(AuthContext);
+  const handleConvert = async (file: PDFFile) => {
+    try {
+      await uploadFile(file);
+    } catch (error) {
+      console.error('Conversion error:', error);
+    }
+  };
 
   return (
-    <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-      <Text style={{color: 'white'}}>bhv</Text>
-      <Button title="Select PDF" onPress={handleSelectPDF} />
-      {usertoken !== null ? <Text>working</Text> : <Text>not working</Text>}
-
-      <Button title="naviagte" onPress={() => navigation.navigate('ScanDoc')} />
-
-      <Button
-        title="to pdf"
-        onPress={() => navigation.navigate('ImageToPDf')}
+    <SafeAreaView style={{flex: 1}}>
+      <StatusBar
+        backgroundColor={CommonColors.GRADIENT_ONE}
+        barStyle={'default'}
       />
-    </View>
+      <Header title={'Upload Document'} />
+
+      <ScrollView style={styles.container}>
+        <TouchableOpacity
+          style={styles.uploadArea}
+          onPress={handleSelectPDF}
+          disabled={isUploading}>
+          <Icon type={Icons.AntDesign} name={'filetext1'} size={20} />
+          <Text style={styles.uploadText}>
+            {isUploading ? 'Uploading...' : 'Tap to Upload PDF'}
+          </Text>
+          <Text style={styles.uploadSubText}>
+            Select PDF files from your device
+          </Text>
+        </TouchableOpacity>
+
+        <View style={styles.fileListContainer}>
+          {pdfFiles.map((file, index) => (
+            <View key={index} style={styles.fileItem}>
+              <View style={styles.fileInfo}>
+                <Icon type={Icons.AntDesign} name={'filetext1'} size={20} />
+                <Text style={styles.fileName} numberOfLines={1}>
+                  {file.name}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.convertButton,
+                  isUploading && styles.disabledButton,
+                ]}
+                onPress={() => handleConvert(file)}
+                disabled={isUploading}>
+                <Text style={styles.convertButtonText}>
+                  {isUploading ? 'Uploading...' : 'Convert'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
-export default UploadPDF;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    marginVertical: verticalScale(10),
+  },
+  uploadArea: {
+    margin: 16,
+    padding: 20,
+    borderWidth: 2,
+    borderColor: '#2196F3',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  uploadText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2196F3',
+    marginBottom: 4,
+  },
+  uploadSubText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  fileListContainer: {
+    padding: 16,
+  },
+  fileItem: {
+    flexDirection: 'row',
+    backgroundColor: CommonColors.WHITE,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+  fileInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  fileName: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+    marginLeft: 8,
+  },
+  convertButton: {
+    backgroundColor: '#2196F3',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  disabledButton: {
+    backgroundColor: '#cccccc',
+  },
+  convertButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});
+
+export default UploadScreen;

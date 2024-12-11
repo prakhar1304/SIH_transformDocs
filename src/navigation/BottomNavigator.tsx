@@ -1,32 +1,78 @@
-import React, {useRef, useEffect} from 'react';
-import {StyleSheet, View, Animated} from 'react-native';
+import React, {useState} from 'react';
+import {
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  Modal,
+  Animated,
+} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import Login from '../pages/Login';
+import {useNavigation} from '@react-navigation/native';
 import Icon, {Icons} from '../common/Icons';
 import CommonColors from '../common/CommonColors';
-import UploadPDF from '../pages/UploadDoc';
+
+// Import your screens
+
+import Login from '../pages/Login';
+import Home from '../pages/Home';
 
 const Tab = createBottomTabNavigator();
 
-interface AnimatedIconProps {
-  focused: boolean;
-  children: React.ReactNode;
-}
+const AddButton = () => {
+  const [modalVisible, setModalVisible] = useState(false);
+  const navigation = useNavigation();
 
-const AnimatedIcon: React.FC<AnimatedIconProps> = ({focused, children}) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    Animated.spring(scaleAnim, {
-      toValue: focused ? 1.2 : 1,
-      useNativeDriver: true,
-    }).start();
-  }, [focused]);
+  const handleOptionPress = (screen: string) => {
+    setModalVisible(false);
+    navigation.navigate(screen);
+  };
 
   return (
-    <Animated.View style={{transform: [{scale: scaleAnim}]}}>
-      {children}
-    </Animated.View>
+    <>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => setModalVisible(true)}>
+        <Icon
+          type={Icons.Feather}
+          name="plus"
+          size={30}
+          color={CommonColors.WHITE}
+        />
+      </TouchableOpacity>
+
+      <Modal
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}>
+          <View style={styles.optionsContainer}>
+            <TouchableOpacity
+              style={styles.option}
+              onPress={() => handleOptionPress('ScanDoc')}>
+              <Icon
+                type={Icons.Feather}
+                name="camera"
+                size={24}
+                color={CommonColors.WHITE}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.option}
+              onPress={() => handleOptionPress('UploadPdf')}>
+              <Icon
+                type={Icons.Feather}
+                name="upload"
+                size={24}
+                color={CommonColors.WHITE}
+              />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
   );
 };
 
@@ -41,59 +87,41 @@ const BottomNavigator = () => {
           tabBarStyle: styles.tabBarStyle,
         }}>
         <Tab.Screen
-          name="Login"
-          component={Login}
+          name="Home"
+          component={Home}
           options={{
-            tabBarIcon: ({focused}: {focused: boolean}) => (
-              <AnimatedIcon focused={focused}>
-                <View
-                  style={[
-                    styles.PopContainer,
-                    {
-                      backgroundColor: focused
-                        ? 'rgba(255, 255, 255, 0.2)'
-                        : 'transparent',
-                    },
-                  ]}>
-                  <Icon
-                    type={Icons.AntDesign}
-                    name="home"
-                    size={25}
-                    color={
-                      focused ? CommonColors.WHITE : 'rgba(255, 255, 255, 0.6)'
-                    }
-                  />
-                </View>
-              </AnimatedIcon>
+            tabBarIcon: ({focused}) => (
+              <View style={styles.tabIconContainer}>
+                <Icon
+                  type={Icons.AntDesign}
+                  name="home"
+                  size={24}
+                  color={focused ? CommonColors.THEME : CommonColors.BLACK}
+                />
+              </View>
             ),
           }}
         />
-
         <Tab.Screen
-          name="UploadPdf"
-          component={UploadPDF}
+          name="Add"
+          component={View}
           options={{
-            tabBarIcon: ({focused}: {focused: boolean}) => (
-              <AnimatedIcon focused={focused}>
-                <View
-                  style={[
-                    styles.PopContainer,
-                    {
-                      backgroundColor: focused
-                        ? 'rgba(255, 255, 255, 0.2)'
-                        : 'transparent',
-                    },
-                  ]}>
-                  <Icon
-                    type={Icons.Entypo}
-                    name="upload"
-                    size={25}
-                    color={
-                      focused ? CommonColors.WHITE : 'rgba(255, 255, 255, 0.6)'
-                    }
-                  />
-                </View>
-              </AnimatedIcon>
+            tabBarIcon: () => <AddButton />,
+          }}
+        />
+        <Tab.Screen
+          name="Login"
+          component={Login}
+          options={{
+            tabBarIcon: ({focused}) => (
+              <View style={styles.tabIconContainer}>
+                <Icon
+                  type={Icons.Ionicons}
+                  name="chatbubble-outline"
+                  size={24}
+                  color={focused ? CommonColors.THEME : CommonColors.BLACK}
+                />
+              </View>
             ),
           }}
         />
@@ -106,21 +134,63 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-
   tabBarStyle: {
     height: 60,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: CommonColors.WHITE,
     borderTopWidth: 0,
-    paddingBottom: 5,
-    paddingTop: 5,
+    position: 'absolute',
+    elevation: 0,
+    borderTopColor: 'transparent',
   },
-
-  PopContainer: {
-    height: 40,
-    width: 40,
+  addButton: {
+    backgroundColor: '#FF4141',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 20,
+    marginBottom: 30,
+    shadowColor: '#FF4141',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.5,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+    paddingBottom: 80,
+  },
+  optionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+  },
+  option: {
+    backgroundColor: '#FF4141',
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#FF4141',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.5,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  tabIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 5,
   },
 });
 

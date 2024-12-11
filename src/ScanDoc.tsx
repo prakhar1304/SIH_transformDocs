@@ -10,6 +10,8 @@ import {
   View,
   Platform,
   useWindowDimensions,
+  Modal,
+  TextInput,
 } from 'react-native';
 import DocumentScanner from 'react-native-document-scanner-plugin';
 import * as PDFLib from '@shogobg/react-native-pdf';
@@ -21,6 +23,11 @@ const ScanDoc: React.FC = () => {
   const [firebaseImageUrls, setFirebaseImageUrls] = useState<string[]>([]);
   const [pdfPath, setPdfPath] = useState<string | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
+
+  const [pdfBase64, setPdfBase64] = useState<string | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const [customFileName, setCustomFileName] = useState<string>('');
+  const [savedFileName, setSavedFileName] = useState<string>('');
   const {width} = useWindowDimensions();
 
   const scanDocument = async () => {
@@ -96,7 +103,26 @@ const ScanDoc: React.FC = () => {
     }
   };
 
-  const createPDFFromFirebaseUrls = async () => {
+  const handleCreatePDF = () => {
+    if (firebaseImageUrls.length === 0) {
+      Alert.alert('Error', 'No images to create PDF');
+      return;
+    }
+    setIsModalVisible(true);
+  };
+
+  const handleModalSubmit = async () => {
+    if (!customFileName.trim()) {
+      Alert.alert('Error', 'Please enter a file name');
+      return;
+    }
+    setIsModalVisible(false);
+    setSavedFileName(customFileName);
+    await createPDFFromFirebaseUrls(customFileName);
+    setCustomFileName(''); // Reset input after submission
+  };
+
+  const createPDFFromFirebaseUrls = async (fileName: string) => {
     if (firebaseImageUrls.length === 0) {
       Alert.alert('Error', 'No images to create PDF');
       return;
@@ -126,7 +152,8 @@ const ScanDoc: React.FC = () => {
           ? RNFS.ExternalDirectoryPath
           : RNFS.DocumentDirectoryPath;
 
-      const pdfFilename = `ScannedDocument_${Date.now()}.pdf`;
+      const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9-_]/g, '_');
+      const pdfFilename = `${sanitizedFileName}_${Date.now()}.pdf`;
       const pdfPath = `${pdfDirectory}/${pdfFilename}`;
 
       // Create a new PDF document
@@ -156,6 +183,18 @@ const ScanDoc: React.FC = () => {
 
       // Write the PDF
       await pdfDocument.write();
+
+      // Convert PDF to base64
+      const base64Data = await RNFS.readFile(pdfPath, 'base64');
+      setPdfBase64(base64Data);
+      setPdfPath(pdfPath);
+
+      Alert.alert(
+        'Success',
+        `PDF created with ${localImagePaths.length} pages`,
+      );
+      console.log('PDF saved at:', pdfPath);
+      console.log('Base64 PDF length:', base64Data.length);
 
       setPdfPath(pdfPath);
       Alert.alert(
@@ -207,9 +246,7 @@ const ScanDoc: React.FC = () => {
 
         {firebaseImageUrls.length > 0 && (
           <>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={createPDFFromFirebaseUrls}>
+            <TouchableOpacity style={styles.button} onPress={handleCreatePDF}>
               <Text style={styles.buttonText}>
                 Create PDF ({firebaseImageUrls.length})
               </Text>
@@ -226,8 +263,48 @@ const ScanDoc: React.FC = () => {
       {pdfPath && (
         <View style={styles.pdfInfo}>
           <Text style={styles.pdfText}>PDF Created Successfully</Text>
+          {savedFileName && (
+            <Text style={styles.pdfText}>File Name: {savedFileName}</Text>
+          )}
+          {pdfBase64 && (
+            <Text style={styles.pdfText}>
+              Base64 length: {pdfBase64.length}
+            </Text>
+          )}
         </View>
       )}
+
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Enter PDF Name</Text>
+            <TextInput
+              style={styles.input}
+              value={customFileName}
+              onChangeText={setCustomFileName}
+              placeholder="Enter file name"
+              placeholderTextColor="#999"
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.button, styles.modalButton, styles.cancelButton]}
+                onPress={() => setIsModalVisible(false)}>
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.modalButton]}
+                onPress={handleModalSubmit}>
+                <Text style={styles.buttonText}>Create PDF</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -296,6 +373,46 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 16,
     color: '#4CAF50',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#333',
+  },
+  input: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+    fontSize: 16,
+    color: '#333',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    flex: 0.45,
+  },
+  cancelButton: {
+    backgroundColor: '#757575',
   },
 });
 
