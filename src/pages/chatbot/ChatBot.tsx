@@ -16,6 +16,7 @@ import CommonStyles from '../../common/CommonStyles';
 import Styles from './Styles';
 import ReactMarkdown from 'react-native-markdown-display';
 import MainHeader from '../../component/MainHeader';
+import Header from '../../component/header/Index';
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI('AIzaSyDKvJBGxmhAYjC7O5stDTBHeexdLT6VlMo');
@@ -173,7 +174,8 @@ const ChatBot: React.FC = () => {
         backgroundColor={CommonColors.STATUSBAR}
         barStyle="light-content"
       />
-      <MainHeader title="Chat  Bot" />
+
+      <Header title="Chat  Bot" />
       <View style={commonStyles.container}>
         <View
           style={{

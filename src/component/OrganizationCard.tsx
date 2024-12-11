@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewButtonText: {
-    color: '#fff',
+    color: CommonColors.THEME,
     fontWeight: '600',
     fontSize: 14,
   },
