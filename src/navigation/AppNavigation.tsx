@@ -8,6 +8,7 @@ import UploadPDF from '../pages/UploadDoc';
 import ChatBot from '../pages/chatbot/ChatBot';
 import SplashScreen from '../pages/SplashScreen';
 import Login from '../pages/Login';
+import SignUpScreen from '../pages/SignUpScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -24,6 +25,11 @@ function AppNavigation() {
       <Stack.Screen
         name="Login"
         component={Login}
+        options={{animation: 'slide_from_bottom'}}
+      />
+      <Stack.Screen
+        name="SignUpScreen"
+        component={SignUpScreen}
         options={{animation: 'slide_from_bottom'}}
       />
       <Stack.Screen

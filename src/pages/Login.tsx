@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   StatusBar,
   Text,
@@ -7,17 +7,41 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
-  ImageBackground,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import {moderateScale, scale, verticalScale} from 'react-native-size-matters';
 import {useNavigation} from '@react-navigation/native';
+import {useAuth} from '../context/AuthContext'; // Adjust import path as needed
 
 const {width, height} = Dimensions.get('window');
 
 const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const {signIn, isLoading} = useAuth();
   const navigation = useNavigation();
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password');
+      return;
+    }
+
+    const success = await signIn(email, password);
+    if (success) {
+      navigation.navigate('BottomNavigator');
+    } else {
+      Alert.alert('Login Failed', 'Invalid credentials');
+    }
+  };
+
+  const navigateToSignUp = () => {
+    navigation.navigate('SignUpScreen');
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#4A7AFF" barStyle="light-content" />
@@ -42,6 +66,8 @@ const Login = () => {
                 keyboardType="email-address"
                 underlineColorAndroid="transparent"
                 placeholderTextColor="#999"
+                value={email}
+                onChangeText={setEmail}
               />
             </View>
 
@@ -55,21 +81,27 @@ const Login = () => {
                 secureTextEntry
                 underlineColorAndroid="transparent"
                 placeholderTextColor="#999"
+                value={password}
+                onChangeText={setPassword}
               />
             </View>
-          </View>
 
-          <TouchableOpacity
-            style={styles.btn}
-            onPress={() => navigation.navigate('BottomNavigator')}>
-            <Text style={styles.btnText}>Login Now</Text>
-          </TouchableOpacity>
+            {isLoading ? (
+              <ActivityIndicator size="large" color="#4A7AFF" />
+            ) : (
+              <TouchableOpacity style={styles.btn} onPress={handleLogin}>
+                <Text style={styles.btnText}>Login Now</Text>
+              </TouchableOpacity>
+            )}
 
-          <View style={styles.contactView}>
-            <Text style={styles.smallTxt}>New user?</Text>
-            <TouchableOpacity style={{marginLeft: scale(4)}}>
-              <Text style={styles.register}>Register Now</Text>
-            </TouchableOpacity>
+            <View style={styles.contactView}>
+              <Text style={styles.smallTxt}>New user?</Text>
+              <TouchableOpacity
+                style={{marginLeft: scale(4)}}
+                onPress={navigateToSignUp}>
+                <Text style={styles.register}>Register Now</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </KeyboardAwareScrollView>
       </View>
