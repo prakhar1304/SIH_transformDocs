@@ -11,14 +11,14 @@ import {
   StatusBar,
 } from 'react-native';
 import DocumentPicker, {types} from 'react-native-document-picker';
-import {AuthContext} from '../context/AuthContext';
+
 import Icon, {Icons} from '../common/Icons';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Header from '../component/header/Index';
 import CommonColors from '../common/CommonColors';
 import {verticalScale} from 'react-native-size-matters';
 import RNFS from 'react-native-fs';
-
+import {useAuth} from '../context/AuthContext';
 interface PDFFile {
   name: string;
   uri: string;
@@ -39,6 +39,7 @@ interface UploadResponse {
 const API_URL = 'https://d642-125-18-25-132.ngrok-free.app/api/upload';
 
 const UploadScreen: React.FC = () => {
+  const {token} = useAuth();
   const [hasPermission, setHasPermission] = useState(true);
   const [pdfFiles, setPdfFiles] = useState<PDFFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -99,6 +100,7 @@ const UploadScreen: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           fileName: file.name,

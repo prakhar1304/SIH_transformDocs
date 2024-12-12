@@ -15,6 +15,7 @@ import CommonColors from '../common/CommonColors';
 
 import Login from '../pages/Login';
 import Home from '../pages/Home';
+import Profile from '../pages/Profile';
 
 const Tab = createBottomTabNavigator();
 
@@ -110,8 +111,8 @@ const BottomNavigator = () => {
           }}
         />
         <Tab.Screen
-          name="Login"
-          component={Login}
+          name="Profile"
+          component={Profile}
           options={{
             tabBarIcon: ({focused}) => (
               <View style={styles.tabIconContainer}>

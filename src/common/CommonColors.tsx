@@ -32,4 +32,5 @@ export default {
   FONT_COLOUR: '#0F1828',
   BG_LIGHT_GRAY: '#F7F7FC',
   GRADIENT_ONE: '#516ee0',
+  TEXT_GRAY: '#0F1828',
 };

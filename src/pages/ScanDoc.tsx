@@ -23,6 +23,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon, {Icons} from '../common/Icons';
 import {verticalScale} from 'react-native-size-matters';
 import style from './Scan/Style';
+import {useAuth} from '../context/AuthContext';
 
 const API_URL: string = 'https://d642-125-18-25-132.ngrok-free.app/api/upload';
 
@@ -54,6 +55,7 @@ interface UploadRequestBody {
 }
 
 const ScanDoc: React.FC = () => {
+  const {token} = useAuth();
   const [scannedImages, setScannedImages] = useState<string[]>([]);
   const [firebaseImageUrls, setFirebaseImageUrls] = useState<string[]>([]);
   const [pdfPath, setPdfPath] = useState<string | null>(null);
@@ -245,6 +247,7 @@ const ScanDoc: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(requestBody),
       });

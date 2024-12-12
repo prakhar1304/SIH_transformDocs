@@ -1,4 +1,3 @@
-import CommonStyles from '../common/CommonStyles';
 import React, {useEffect} from 'react';
 import {
   View,
@@ -10,11 +9,15 @@ import {
   Dimensions,
 } from 'react-native';
 import {moderateScale, scale, verticalScale} from 'react-native-size-matters';
+import {useNavigation} from '@react-navigation/native';
+import {useAuth} from '../context/AuthContext';
+
 const {width} = Dimensions.get('window');
 
-const SplashScreen: React.FC = ({navigation}: any) => {
-  const commonStyles = CommonStyles('white');
+const SplashScreen: React.FC = () => {
+  const {token, isLoading, isSignedIn, logout} = useAuth();
   const scaleAnim = new Animated.Value(0);
+  const navigation = useNavigation();
 
   useEffect(() => {
     // Start the zoom animation
@@ -28,25 +31,22 @@ const SplashScreen: React.FC = ({navigation}: any) => {
     const checkUserAndNavigate = async () => {
       try {
         // Fetch user data
-
-        // Delay to show splash screen
-        setTimeout(() => {
-          navigation.navigate('Login');
-
-          // navigation.navigate('WelcomeScreen');
-        }, 2000); // 2 second delay
+        if (token) {
+          navigation.navigate('BottomNavigator'); // Navigate to the bottom tab screen if token exists
+        } else {
+          setTimeout(() => {
+            navigation.navigate('Login'); // Navigate to login screen after delay
+          }, 2000); // 2 second delay
+        }
       } catch (error) {
         console.error('Error checking user:', error);
-        navigation.navigate('WelcomeScreen');
+        // navigation.navigate('WelcomeScreen'); // Fallback to welcome screen if any error
       }
     };
 
     // Trigger the check
     checkUserAndNavigate();
-
-    // Cleanup
-    return () => {};
-  }, [navigation]);
+  }, [token, navigation]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -57,7 +57,6 @@ const SplashScreen: React.FC = ({navigation}: any) => {
           resizeMode="contain"
         />
       </Animated.View>
-      {/* <Text style={styles.textName}>Your App Name</Text> */}
     </SafeAreaView>
   );
 };
@@ -73,11 +72,6 @@ const styles = StyleSheet.create({
     width: scale(250),
     height: scale(250),
     marginBottom: verticalScale(20),
-  },
-  textName: {
-    fontSize: moderateScale(24),
-    color: 'black',
-    fontWeight: 'bold',
   },
 });
 
