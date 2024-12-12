@@ -32,4 +32,10 @@ export default {
   FONT_COLOUR: '#0F1828',
   BG_LIGHT_GRAY: '#F7F7FC',
   GRADIENT_ONE: '#516ee0',
+
+  theme: '#002DE3', // Coral/orange color for primary elements
+  textPrimary: '#333333',
+  textSecondary: '#8F8F8F',
+  background: '#FFFFFF',
+  itemBackground: '#F8F9FA',
 };

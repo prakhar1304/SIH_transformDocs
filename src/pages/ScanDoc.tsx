@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
   TextInput,
   StatusBar,
+  Animated,
 } from 'react-native';
 import DocumentScanner from 'react-native-document-scanner-plugin';
 import * as PDFLib from '@shogobg/react-native-pdf';
@@ -23,6 +24,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon, {Icons} from '../common/Icons';
 import {verticalScale} from 'react-native-size-matters';
 import style from './Scan/Style';
+import Loader from '../component/Loader';
 
 const API_URL: string = 'https://d642-125-18-25-132.ngrok-free.app/api/upload';
 
@@ -62,8 +64,35 @@ const ScanDoc: React.FC = () => {
   const [fileName, setFileName] = useState<string>('');
   const [pdfBase64, setPdfBase64] = useState<string>('');
   const [fileNameInputMode, setFileNameInputMode] = useState<boolean>(false);
-
+  const [toastVisible, setToastVisible] = useState<boolean>(false);
+  const [toastMessage, setToastMessage] = useState<string>('');
+  const toastAnimation = useState(new Animated.Value(-100))[0];
+  const [isLoding, setIsLoding] = useState(false);
   const styles = style;
+
+  // Add this new function to show toast
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setToastVisible(true);
+
+    Animated.sequence([
+      Animated.timing(toastAnimation, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.delay(2000),
+      Animated.timing(toastAnimation, {
+        toValue: -100,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setTimeout(() => {
+        setToastVisible(false);
+      }, 300);
+    });
+  };
 
   const convertToBase64 = async (pdfPath: string): Promise<string> => {
     try {
@@ -129,21 +158,19 @@ const ScanDoc: React.FC = () => {
       const uploadedUrls: string[] = await Promise.all(uploadPromises);
       setFirebaseImageUrls(prev => [...prev, ...uploadedUrls]);
 
-      Alert.alert(
-        'Success',
-        `${uploadedUrls.length} images uploaded to Firebase`,
-      );
+      showToast('Image Uploaded 🎉');
     } catch (error) {
       console.error('Firebase Upload Error:', error);
-      Alert.alert('Error', 'Failed to upload images to Firebase');
+      Alert.alert('Error', 'Failed to upload images to');
     } finally {
       setUploading(false);
     }
   };
 
   const createPDF = async (): Promise<void> => {
+    setIsLoding(true);
     if (firebaseImageUrls.length === 0) {
-      Alert.alert('Error', 'No images to create PDF');
+      Alert.alert('Error', 'No images to upload PDF');
       return;
     }
 
@@ -201,7 +228,6 @@ const ScanDoc: React.FC = () => {
               y: 0,
               width: 600,
               height: 800,
-              compressionQuality: 0.5,
             },
           );
 
@@ -219,7 +245,9 @@ const ScanDoc: React.FC = () => {
       // Clean up temporary downloaded files
       await Promise.all(localImagePaths.map(path => RNFS.unlink(path)));
 
-      Alert.alert('Success', 'PDF created successfully');
+      // Replace Alert with toast
+      showToast('PDF created successfully! 🎉');
+      setIsLoding(false);
     } catch (error) {
       console.error('PDF Creation Error:', error);
       Alert.alert('Error', `Failed to create PDF: ${JSON.stringify(error)}`);
@@ -284,6 +312,30 @@ const ScanDoc: React.FC = () => {
         barStyle="light-content"
       />
       <Header title={'Document Scanner'} />
+      <Loader visible={isLoding} />
+
+      {toastVisible && (
+        <Animated.View
+          style={[
+            styles.toastContainer,
+            {
+              transform: [
+                {
+                  translateY: toastAnimation,
+                },
+              ],
+            },
+          ]}>
+          <Icon
+            type={Icons.Feather}
+            name="check-circle"
+            size={24}
+            color="#4CAF50"
+            style={styles.toastIcon}
+          />
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </Animated.View>
+      )}
 
       <View style={styles.contentContainer}>
         {fileNameInputMode ? (
@@ -366,10 +418,10 @@ const ScanDoc: React.FC = () => {
                 onPress={createPDF}
                 disabled={uploading || !fileName.trim()}>
                 <Text style={styles.actionButtonText}>
-                  {uploading ? 'Processing...' : 'Create PDF'}
+                  {uploading ? 'Processing...' : 'Upload'}
                 </Text>
               </TouchableOpacity>
-
+              {/* 
               {pdfBase64 && (
                 <TouchableOpacity
                   style={[
@@ -382,7 +434,7 @@ const ScanDoc: React.FC = () => {
                     {uploading ? 'Uploading...' : 'Upload PDF'}
                   </Text>
                 </TouchableOpacity>
-              )}
+              )} */}
 
               <TouchableOpacity
                 style={[

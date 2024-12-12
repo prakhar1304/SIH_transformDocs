@@ -181,6 +181,36 @@ const style = StyleSheet.create({
   disabledButton: {
     opacity: 0.5,
   },
+  toastContainer: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    right: 20,
+    backgroundColor: CommonColors.WHITE,
+    borderRadius: 20,
+    borderColor: CommonColors.THEME,
+    borderWidth: 1,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    zIndex: 9999,
+  },
+  toastIcon: {
+    marginRight: 12,
+  },
+  toastText: {
+    color: CommonColors.THEME,
+    fontSize: 16,
+    flex: 1,
+  },
 });
 
 export default style;

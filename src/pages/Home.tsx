@@ -39,7 +39,7 @@ const Home = () => {
       <ScrollView style={styles.content}>
         <Text style={styles.heading}>Your Organizations</Text>
         {orgsData.map((org, index) => (
-          <OrganizationCard key={index} org={org} onPress={() => {}} />
+          <OrganizationCard key={index} org={org} />
         ))}
       </ScrollView>
       <TouchableOpacity

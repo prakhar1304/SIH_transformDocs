@@ -1,5 +1,4 @@
-// components/OrganizationCard.js
-
+import {useNavigation} from '@react-navigation/native';
 import CommonColors from '../common/CommonColors';
 import React from 'react';
 import {
@@ -8,7 +7,6 @@ import {
   View,
   Image,
   TouchableOpacity,
-  ImageBackground,
   Dimensions,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
@@ -16,13 +14,11 @@ import {scale} from 'react-native-size-matters';
 
 const {width} = Dimensions.get('window');
 
-const OrganizationCard = ({org, onPress}) => {
+const OrganizationCard = ({org}) => {
+  const navigation = useNavigation(); // Hook for navigation
+
   return (
-    <TouchableOpacity style={styles.cardContainer} onPress={onPress}>
-      {/* <ImageBackground
-        source={require('../assets/images/blur.png')} // Add your background image
-        style={styles.backgroundImage}
-        imageStyle={styles.backgroundImageStyle}> */}
+    <TouchableOpacity style={styles.cardContainer}>
       <LinearGradient
         colors={[CommonColors.WHITE, CommonColors.WHITE]}
         style={styles.gradient}>
@@ -34,11 +30,12 @@ const OrganizationCard = ({org, onPress}) => {
             <Text style={styles.adminName}>Admin: {org.adminName}</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.viewButton}>
-          <Text style={styles.viewButtonText}>View </Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Oraganisation')} // Navigate to the Organisation screen
+          style={styles.viewButton}>
+          <Text style={styles.viewButtonText}>View</Text>
         </TouchableOpacity>
       </LinearGradient>
-      {/* </ImageBackground> */}
     </TouchableOpacity>
   );
 };
@@ -52,10 +49,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderColor: CommonColors.BLACK,
     borderWidth: 1,
-  },
-
-  backgroundImageStyle: {
-    borderRadius: 20,
   },
   gradient: {
     flex: 1,
@@ -80,7 +73,6 @@ const styles = StyleSheet.create({
   },
   orgName: {
     fontSize: 22,
-    // fontWeight: 'bold',
     color: CommonColors.BLACK,
     marginBottom: 4,
     fontFamily: 'Mulish-Black',
@@ -97,13 +89,8 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     marginBottom: 2,
   },
-  documentCount: {
-    fontSize: 14,
-    color: CommonColors.BLACK,
-    opacity: 0.8,
-  },
   viewButton: {
-    backgroundColor: CommonColors.BLACK,
+    backgroundColor: CommonColors.THEME,
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
