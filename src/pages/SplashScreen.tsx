@@ -70,8 +70,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   logo: {
-    width: scale(200),
-    height: scale(200),
+    width: scale(250),
+    height: scale(250),
     marginBottom: verticalScale(20),
   },
   textName: {

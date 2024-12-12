@@ -29,7 +29,7 @@ Your responses should be well-formatted and use markdown properly:
 - Use * for italic text (e.g., *italic*)
 - Use proper spacing around markdown elements
 - Use proper line breaks between sections
-Provide clear, concise responses based on the project requirements.`;
+Provide clear, concise responses based on the project requirements. For issues related to document scanning and image upload in your app, guide users on how to use these features effectively and explain how they convert to machine-readable formats.`;
 
 const ChatBot: React.FC = () => {
   const navigation = useNavigation();
