@@ -236,7 +236,7 @@ const ScanDoc: React.FC = () => {
       setUploading(true);
 
       const requestBody: UploadRequestBody = {
-        fileName: `${fileName.trim()}.pdf`,
+        fileName: `${fileName.trim()}`,
         fileType: 'application/pdf',
         fileContent: pdfBase64,
       };
