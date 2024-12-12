@@ -8,6 +8,7 @@ import UploadPDF from '../pages/UploadDoc';
 import ChatBot from '../pages/chatbot/ChatBot';
 import SplashScreen from '../pages/SplashScreen';
 import Login from '../pages/Login';
+import PdfConvert from '../py/PdfConvert';
 
 const Stack = createNativeStackNavigator();
 
@@ -49,6 +50,11 @@ function AppNavigation() {
       <Stack.Screen
         name="ChatBot"
         component={ChatBot}
+        options={{animation: 'slide_from_bottom'}}
+      />
+      <Stack.Screen
+        name="PdfConvert"
+        component={PdfConvert}
         options={{animation: 'slide_from_bottom'}}
       />
     </Stack.Navigator>

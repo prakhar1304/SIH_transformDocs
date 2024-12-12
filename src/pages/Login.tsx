@@ -61,7 +61,7 @@ const Login = () => {
 
           <TouchableOpacity
             style={styles.btn}
-            onPress={() => navigation.navigate('BottomNavigator')}>
+            onPress={() => navigation.navigate('PdfConvert')}>
             <Text style={styles.btnText}>Login Now</Text>
           </TouchableOpacity>
 
